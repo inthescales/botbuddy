@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import json
 import sys
 import time
@@ -8,7 +9,7 @@ from random import randint
 
 # Defaults and values =====================
 
-default_start = 0
+default_start = None
 default_period = 1.0
 default_credentials = 'creds'
 default_retry = True
@@ -30,7 +31,7 @@ creds_keys = [consumer_key_key, consumer_secret_key, access_token_key, access_to
 # Set up and handle arguments =============
 
 parser = argparse.ArgumentParser(description='Launch your twitter bot.')
-parser.add_argument('-s', '--start', metavar='S', help='time to begin posting', default=default_start)
+parser.add_argument('-s', '--start', metavar='S', help='date and time to begin posting', default=default_start)
 parser.add_argument('-p', '--period', metavar='P', type=float, help='time between posts in minutes', default=default_period)
 parser.add_argument('-c', '--credentials', metavar='C', help='credentials file', default=default_credentials)
 parser.add_argument('-r', '--retry', action='store_const', help='retry generation if invalid', const=default_retry)
@@ -59,7 +60,6 @@ def read_args():
     global start, period, credentials, retry, test_mode, verbosity
     
     args = vars(parser.parse_args())
-    print args
     start = args["start"]
     period = args["period"]
     credentials = args["credentials"]
@@ -92,6 +92,61 @@ def validate_creds(creds):
     
 def version_message():
     print "version 1.0.0"
+    
+# Date and time -------------------------
+
+def parse_datetime(input):
+    segments = input.split(":")
+    now = datetime.datetime.now()
+    if len(segments) == 3:
+        date = parse_date(segments[0])
+        time = parse_time(segments[1] + ":" + segments[2])
+        ret = datetime.datetime(date.year, date.month, date.day, time.hour, time.minute)
+        if ret < now:
+            error("Error: start time specified has already passed.")
+        else:
+            return ret
+    
+    if len(segments) == 2:
+        time = parse_time(input)
+        todays = datetime.datetime(now.year, now.month, now.day, time.hour, time.minute)
+        if todays >= now:
+            return todays
+        else:
+            return todays + datetime.timedelta(1)
+        
+    if len(segments) == 1:
+        date = parse_date(input)
+        if date:
+            if date < now:
+                error("Error: start date specified has already passed.")
+            else:
+                return date
+    
+    time_error()
+
+def parse_date(input):
+    segments = number_array(input.split("/"))
+    if len(segments) == 3:
+        return datetime.datetime(segments[2], segments[0], segments[1])
+    
+    time_error()
+    
+def parse_time(input):
+    segments = number_array(input.split(":"))
+    if len(segments) == 2:
+        return datetime.time(segments[0], segments[1])
+        
+    time_error()
+    
+def number_array(input):
+    try:
+        return [int(x) for x in input]
+    except ValueError:
+        time_error()
+    
+def time_error():
+    error("Couldn't understand start parameter. Requires date and/or time. Format is MM/DD/YYYY:HH:MM")
     
 # Output --------------------------------
 
@@ -126,6 +181,9 @@ def send_tweet(birdie, tweet):
         #birdie.api.update_status(status=tweet)
         verbose_print(1, "Posted tweet")
 
+def sleep_until_start():
+    print "sleeping a bit"
+
 def sleep_for_period():
     sleep_time = 60.0 * period
     verbose_print(1, "sleeping for " + str(int(period)) + " minute(s)")
@@ -140,7 +198,11 @@ def launch():
     creds = get_credentials(credentials)
     birdie = Birdie(creds)
     
-    # wait delay
+    if start:
+        date = parse_datetime(start)
+        print date
+        
+    sleep_until_start()
     
     while True:
     
