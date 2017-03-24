@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import json
+import re
 import sys
 import time
 import tweepy
@@ -11,16 +12,18 @@ from random import randint
 
 default_start = None
 default_period = 1.0
-default_credentials = 'creds'
+default_creds_file = 'creds'
 default_retry = True
 default_verbosity = 0
 
-credentials = default_credentials
+creds_file = default_creds_file
 start = default_start
 period = default_period
 retry = default_retry
 test_mode = False
 verbosity = default_verbosity
+
+credentials = None
 
 consumer_key_key = "consumer_key"
 consumer_secret_key = "consumer_secret"
@@ -28,12 +31,14 @@ access_token_key = "access_token"
 access_token_secret_key = "access_token_secret"
 creds_keys = [consumer_key_key, consumer_secret_key, access_token_key, access_token_secret_key]
 
+duration_units = {"s" : 1, "m" : 60, "h" : 3600, "d" : 86400, "w" : 604800}
+
 # Set up and handle arguments =============
 
 parser = argparse.ArgumentParser(description='Launch your twitter bot.')
-parser.add_argument('-s', '--start', metavar='S', help='date and time to begin posting', default=default_start)
-parser.add_argument('-p', '--period', metavar='P', type=float, help='time between posts in minutes', default=default_period)
-parser.add_argument('-c', '--credentials', metavar='C', help='credentials file', default=default_credentials)
+parser.add_argument('-s', '--start', metavar='S', help='date and time to begin posting')
+parser.add_argument('-p', '--period', metavar='P', help='time between posts')
+parser.add_argument('-c', '--credentials', metavar='C', help='credentials file')
 parser.add_argument('-r', '--retry', action='store_const', help='retry generation if invalid', const=default_retry)
 parser.add_argument('-t', '--test', action='store_const', help='print output to command line instead of tweeting', const=False)
 parser.add_argument('--verbose', action='store_const', help='receive additional process information', const=True)
@@ -57,17 +62,28 @@ class Birdie:
 # Arguments and credentials -----------------
 
 def read_args():
-    global start, period, credentials, retry, test_mode, verbosity
+    global start, period, creds_file, credentials, retry, test_mode, verbosity
     
     args = vars(parser.parse_args())
-    start = args["start"]
-    period = args["period"]
-    credentials = args["credentials"]
-    retry = args["retry"]
-    test_mode = args["test"]
     
     if args["verbose"]:
         verbosity = 1    
+    
+    if args["start"]:
+        start = parse_datetime(args["start"])
+        verbose_print(1, "Read start time of " + str(start))
+    
+    if args["period"]:
+        period = parse_duration(args["period"])
+        verbose_print(1, "Read period of " + args["period"])
+        
+    if args["credentials"]:
+        creds_file = get_credentials(credentials)
+        
+    credentials = get_credentials(creds_file)
+    
+    retry = args["retry"]
+    test_mode = args["test"]
 
 def get_credentials(filename):
 
@@ -75,6 +91,7 @@ def get_credentials(filename):
         
     with open(filename + '.json') as json_data:
         d = json.load(json_data)
+        verbose_print(1, "Credentials found")
         return d
         
     error("Valid creds file not found")
@@ -88,6 +105,7 @@ def validate_creds(creds):
     if missing:
         error("Missing creds keys " + missing)
     
+    verbose_print(1, "Credentials accepted")
     return True
     
 def version_message():
@@ -148,6 +166,21 @@ def number_array(input):
 def time_error():
     error("Couldn't understand start parameter. Requires date and/or time. Format is MM/DD/YYYY:HH:MM")
     
+def parse_duration(input):
+    multiplier = 1
+    exp = re.compile('(\d+)(\w)')
+    match = exp.match(input)
+    term = match.group(1)
+    final = match.group(2)
+    
+    if final in duration_units:
+        multiplier = duration_units[final]
+        
+    if term.isdigit():
+        return int(term) * multiplier    
+    else:
+        error("Couldn't understand period parameter. Format is value followed by unit. Valid units: s, m, h, d, w")
+    
 # Output --------------------------------
 
 def verbose_print(level, text):
@@ -186,7 +219,7 @@ def sleep_until_start():
 
 def sleep_for_period():
     sleep_time = 60.0 * period
-    verbose_print(1, "sleeping for " + str(int(period)) + " minute(s)")
+    verbose_print(1, "sleeping for " + str(int(period)) + " second(s)")
     time.sleep(sleep_time)
 
 # Main ----------------------------------    
@@ -195,12 +228,8 @@ def launch():
 
     verbose_print(1, "Starting up")
         
-    creds = get_credentials(credentials)
-    birdie = Birdie(creds)
-    
-    if start:
-        date = parse_datetime(start)
-        print date
+    read_args()
+    birdie = Birdie(credentials)
         
     sleep_until_start()
     
@@ -222,5 +251,4 @@ def launch():
 
 # Driver =================================
 
-read_args()
 launch()
