@@ -25,6 +25,8 @@ test_mode = False
 verbosity = default_verbosity
 
 credentials = None
+writer_function = None
+validator_function = None
 
 consumer_key_key = "consumer_key"
 consumer_secret_key = "consumer_secret"
@@ -195,13 +197,23 @@ def error(text):
 # Tweets --------------------------------
 
 def create_tweet():
-    # call creation function
+    
+    content = None
+    if writer_function:
+        content = writer_function()
+    else:
+        content = "<<placeholder content>>"
+        
     verbose_print(1, "Tweet created")
-    return "test"
+    return content
 
 def validate_tweet(tweet):
     
     if len(tweet) > 140:
+        verbose_print(1, "Tweet too long")
+        return False
+    
+    if validator_function and not validator_function(tweet):
         verbose_print(1, "Tweet failed validation")
         return False
     
