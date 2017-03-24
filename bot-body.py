@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import json
+import pause
 import re
 import sys
 import time
@@ -11,7 +12,7 @@ from random import randint
 # Defaults and values =====================
 
 default_start = None
-default_period = 1.0
+default_period = 3600
 default_creds_file = 'creds'
 default_retry = True
 default_verbosity = 0
@@ -215,11 +216,16 @@ def send_tweet(birdie, tweet):
         verbose_print(1, "Posted tweet")
 
 def sleep_until_start():
-    print "sleeping a bit"
+
+    if not start:
+        verbose_print(1, "Starting immediately")
+    else:
+        verbose_print(1, "Sleeping until " + str(start))
+        pause.until(start)
 
 def sleep_for_period():
-    sleep_time = 60.0 * period
-    verbose_print(1, "sleeping for " + str(int(period)) + " second(s)")
+    sleep_time = period
+    verbose_print(1, "sleeping for " + str(period) + " second(s)")
     time.sleep(sleep_time)
 
 # Main ----------------------------------    
