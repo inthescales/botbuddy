@@ -135,8 +135,6 @@ class BotBody(Responsive, Credentialed):
     default_retry = True
     default_verbosity = 0
 
-    version = "1.0.0"
-    
     # Set up and handle arguments =============
 
     # Methods ==================================
@@ -185,7 +183,6 @@ class BotBody(Responsive, Credentialed):
         self.parser.add_argument('-r', '--retry', action='store_const', help='retry generation if invalid', const=BotBody.default_retry)
         self.parser.add_argument('-t', '--test', action='store_const', help='print output to command line instead of tweeting', const=True)
         self.parser.add_argument('--verbose', action='store_const', help='receive additional process information', const=True)
-        self.parser.add_argument('--version', action='version', help='print version information', version='Bot-body -- version 1.0.0')
         
     # Arguments and credentials -----------------
 
@@ -223,9 +220,6 @@ class BotBody(Responsive, Credentialed):
             return d
 
         Responsive.error("Valid creds file not found")
-
-    def version_message():
-        print "version " + version
 
     # Tweets --------------------------------
 
