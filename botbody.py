@@ -1,7 +1,6 @@
 import argparse
 import datetime
 import json
-import pause
 import re
 import sys
 import time
@@ -26,7 +25,7 @@ def parse_datetime(input):
     if len(segments) == 2:
         time = parse_time(input)
         todays = datetime.datetime(now.year, now.month, now.day, time.hour, time.minute)
-        if todays >= now:
+        if todays > now:
             return todays
         else:
             return todays + datetime.timedelta(1)
@@ -262,7 +261,8 @@ class BotBody(Responsive, Credentialed):
             self.verbose_print(1, "Starting immediately")
         else:
             self.verbose_print(1, "Sleeping until " + str(self.start))
-            pause.until(self.start)
+            difference = self.start - datetime.datetime.now()
+            time.sleep(difference.total_seconds())
 
     def sleep_for_interval(self):
         sleep_time = self.interval
