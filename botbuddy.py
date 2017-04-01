@@ -213,7 +213,7 @@ class BotBuddy(Responsive, Credentialed):
 
         self.verbose_print(1, "Reading creds file...")
 
-        with open(filename + '.json') as json_data:
+        with open(filename) as json_data:
             d = json.load(json_data)
             self.verbose_print(1, "Credentials found")
             return d
