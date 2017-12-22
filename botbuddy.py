@@ -134,6 +134,10 @@ class BotBuddy(Responsive, Credentialed):
     default_retry = True
     default_verbosity = 0
 
+    # Error handling
+    reconnect_attempts = 0
+    max_reconnect_attempts = 3
+
     # Set up and handle arguments =============
 
     # Methods ==================================
@@ -245,13 +249,28 @@ class BotBuddy(Responsive, Credentialed):
 
         return True
 
+    # Post a tweet using the specified birdie. Returns true if successful, otherwise false
     def send_tweet(self, birdie, tweet):
 
         if self.test_mode:
             print tweet
         else:
-            birdie.tweet(tweet)
-            self.verbose_print(1, "Posted tweet")
+            try:
+                birdie.tweet(tweet)
+                self.verbose_print(1, "Posted tweet (" + len(tweet) + "): " + tweet)
+                reconnect_attempts = 0
+                return true
+            except tweepy.TweepError as err:
+                self.verbose_print(1, "Failed with tweet (" + len(tweet) + "): " + tweet)
+                self.verbose_print(1, "TweepError with code " + err.api_code)
+                self.verbose_print(1, "Reason: " + err.reason)
+                self.verbose_print(1, "Message: " + err.message)
+                return false
+            except IOError, err:
+                self.verbose_print(1, "Failed with tweet (" + len(tweet) + "): " + tweet)
+                self.verbose_print(1, err.errno)
+                self.verbose_print(1, err)
+                return false
 
     # Sleeping ------------------------------
             
@@ -271,10 +290,13 @@ class BotBuddy(Responsive, Credentialed):
 
     # Launcher ----------------------------------    
 
+    def new_birdie(self):
+        return Birdie(self.credentials)
+
     def launch(self):
         self.verbose_print(1, "Starting up")
         self.read_args()
-        birdie = Birdie(self.credentials)
+        birdie = new_birdie()
         
         self.sleep_until_start()
 
@@ -288,7 +310,15 @@ class BotBuddy(Responsive, Credentialed):
                     break
 
             if valid_tweet:
-                self.send_tweet(birdie, tweet)
+                attempt = true
+                while attempt:
+                    success = self.send_tweet(birdie, tweet)
+                    if not success and reconnect_attempts <= 3:
+                        birdie = new_birdie()
+                        reconnect_attempts += 1
+                        attempt = true
+                    else:
+                        attempt = false
 
             self.sleep_for_interval()
 
