@@ -38,21 +38,21 @@ def parse_datetime(input):
             else:
                 return date
 
-    BotBuddy.time_error()
+    time_error()
 
 def parse_date(input):
     segments = number_array(input.split("/"))
     if len(segments) == 3:
         return datetime.datetime(segments[2], segments[0], segments[1])
 
-    BotBuddy.time_error()
+    time_error()
 
 def parse_time(input):
     segments = number_array(input.split(":"))
     if len(segments) == 2:
         return datetime.time(segments[0], segments[1])
 
-    BotBuddy.time_error()
+    time_error()
 
 def parse_duration(input):
     multiplier = 1
@@ -73,7 +73,7 @@ def number_array(input):
     try:
         return [int(x) for x in input]
     except ValueError:
-        BotBuddy.time_error()
+        time_error()
 
 def time_error():
     Responsive.error("Couldn't understand start parameter. Requires date and/or time. Format is MM/DD/YYYY:HH:MM")
@@ -134,10 +134,6 @@ class BotBuddy(Responsive, Credentialed):
     default_retry = True
     default_verbosity = 0
 
-    # Error handling
-    reconnect_attempts = 0
-    max_reconnect_attempts = 3
-
     # Set up and handle arguments =============
 
     # Methods ==================================
@@ -152,6 +148,10 @@ class BotBuddy(Responsive, Credentialed):
         self.credentials = None
         self.write_function = None
         self.validate_function = None
+        
+        # Error handling
+        self.reconnect_attempts = 0
+        self.max_reconnect_attempts = 3
         
         self.setup_parser()
         
@@ -257,20 +257,19 @@ class BotBuddy(Responsive, Credentialed):
         else:
             try:
                 birdie.tweet(tweet)
-                self.verbose_print(1, "Posted tweet (" + len(tweet) + "): " + tweet)
-                reconnect_attempts = 0
-                return true
+                self.verbose_print(1, "Posted tweet (" + str(len(tweet)) + "): " + tweet)
+                self.reconnect_attempts = 0
+                return True
             except tweepy.TweepError as err:
-                self.verbose_print(1, "Failed with tweet (" + len(tweet) + "): " + tweet)
-                self.verbose_print(1, "TweepError with code " + err.api_code)
-                self.verbose_print(1, "Reason: " + err.reason)
-                self.verbose_print(1, "Message: " + err.message)
-                return false
+                self.verbose_print(1, "TweepError with tweet (" + str(len(tweet)) + "): " + tweet)
+                self.verbose_print(1, "Code: " + err.message[0]['code'])
+                self.verbose_print(1, "Message: " + err.message[0]['message'])
+                return False
+            except tweepy.RateLimitError as err:
+                self.verbose_print(1, "RateLimitError with tweet (" + str(len(tweet)) + "): " + tweet)
             except IOError, err:
-                self.verbose_print(1, "Failed with tweet (" + len(tweet) + "): " + tweet)
-                self.verbose_print(1, err.errno)
-                self.verbose_print(1, err)
-                return false
+                self.verbose_print(1, "IOError with tweet (" + str(len(tweet)) + "): " + tweet)
+                return False
 
     # Sleeping ------------------------------
             
@@ -296,12 +295,12 @@ class BotBuddy(Responsive, Credentialed):
     def launch(self):
         self.verbose_print(1, "Starting up")
         self.read_args()
-        birdie = new_birdie()
         
         self.sleep_until_start()
 
         while True:
 
+            birdie = self.new_birdie()
             valid_tweet = False
             while not valid_tweet:
                 tweet = self.create_tweet()
@@ -310,15 +309,15 @@ class BotBuddy(Responsive, Credentialed):
                     break
 
             if valid_tweet:
-                attempt = true
+                attempt = True
                 while attempt:
                     success = self.send_tweet(birdie, tweet)
-                    if not success and reconnect_attempts <= 3:
-                        birdie = new_birdie()
-                        reconnect_attempts += 1
-                        attempt = true
+                    if not success and self.reconnect_attempts <= 3:
+                        birdie = self.new_birdie()
+                        self.reconnect_attempts += 1
+                        attempt = True
                     else:
-                        attempt = false
+                        attempt = False
 
             self.sleep_for_interval()
 
