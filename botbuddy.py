@@ -21,9 +21,8 @@ def parse_datetime(input, interval):
             Responsive.error("Error: interval is not an even multiple of a day")
             
         now = datetime.datetime.now()
-        #print str(now.second) + "s, " + str(now.minute) + "m, " + str(now.hour) + "h"
         seconds = now.second + now.minute * 60 + now.hour * 3600
-        time_till = seconds - (math.floor(seconds / interval) * interval)
+        time_till = (math.ceil(float(seconds) / float(interval)) * interval) - seconds
         return now + datetime.timedelta(seconds=time_till)
         
     
