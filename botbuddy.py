@@ -5,14 +5,27 @@ import re
 import sys
 import time
 import tweepy
+import math
 
 # Date and time parsing ===================================
 
+daylength = 86400
 duration_units = {"s" : 1, "m" : 60, "h" : 3600, "d" : 86400, "w" : 604800}
 
-def parse_datetime(input):
+def parse_datetime(input, interval):
     segments = input.split(":")
     now = datetime.datetime.now()
+    
+    if input == "next":
+        if daylength % interval != 0:
+            Responsive.error("Error: interval is not an even multiple of a day")
+            
+        now = datetime.datetime.now()
+        seconds = now.second + now.minute * 60 + now.hour * 3600
+        time_till = (math.ceil(float(seconds) / float(interval)) * interval) - seconds
+        return now + datetime.timedelta(seconds=time_till)
+        
+    
     if len(segments) == 3:
         date = parse_date(segments[0])
         time = parse_time(segments[1] + ":" + segments[2])
@@ -163,11 +176,11 @@ class BotBuddy(Responsive, Credentialed):
         if validate_function:
             self.validate_function = validate_function
             
-        if start:
-            self.start = parse_datetime(start)
-        
         if interval:
             self.interval = parse_duration(interval)
+            
+        if start:
+            self.start = parse_datetime(start, interval)
             
         if retry:
             self.retry = retry
@@ -195,13 +208,13 @@ class BotBuddy(Responsive, Credentialed):
         if args["verbose"]:
             self.verbosity = 1    
 
-        if args["start"]:
-            self.start = parse_datetime(args["start"])
-            self.verbose_print(1, "Read start time of " + str(self.start))
-
         if args["interval"]:
             self.interval = parse_duration(args["interval"])
             self.verbose_print(1, "Read interval of " + args["interval"])
+            
+        if args["start"]:
+            self.start = parse_datetime(args["start"], self.interval)
+            self.verbose_print(1, "Read start time of " + str(self.start))
 
         if args["credentials"]:
             self.creds_file = args["credentials"]
@@ -254,6 +267,7 @@ class BotBuddy(Responsive, Credentialed):
 
         if self.test_mode:
             print tweet
+            return True
         else:
             try:
                 birdie.tweet(tweet)
