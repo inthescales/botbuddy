@@ -262,7 +262,7 @@ class BotBuddy(Responsive, Credentialed):
                 return True
             except tweepy.TweepError as err:
                 self.verbose_print(1, "TweepError with tweet (" + str(len(tweet)) + "): " + tweet)
-                self.verbose_print(1, "Code: " + err.message[0]['code'])
+                self.verbose_print(1, "Code: " + str(err.message[0]['code']))
                 self.verbose_print(1, "Message: " + err.message[0]['message'])
                 return False
             except tweepy.RateLimitError as err:
