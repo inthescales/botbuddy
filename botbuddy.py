@@ -103,7 +103,7 @@ class Responsive:
 
     @staticmethod
     def error(text):
-        print "ERROR: " + text
+        print("ERROR: " + text)
         sys.exit()
         
 class Credentialed:
@@ -239,7 +239,7 @@ class BotBuddy(Responsive, Credentialed):
 
     # Tweets --------------------------------
 
-    def create_tweet(self):
+    def write_tweet(self):
 
         content = None
         if self.write_function:
@@ -266,7 +266,7 @@ class BotBuddy(Responsive, Credentialed):
     def send_tweet(self, birdie, tweet):
 
         if self.test_mode:
-            print tweet
+            print(tweet)
             return True
         else:
             try:
@@ -281,9 +281,33 @@ class BotBuddy(Responsive, Credentialed):
                 return False
             except tweepy.RateLimitError as err:
                 self.verbose_print(1, "RateLimitError with tweet (" + str(len(tweet)) + "): " + tweet)
-            except IOError, err:
+            except IOError as err:
                 self.verbose_print(1, "IOError with tweet (" + str(len(tweet)) + "): " + tweet)
                 return False
+
+    def tweet(self):
+        self.verbose_print(1, "Starting to tweet")
+
+        tweet = None
+        while not tweet:
+            tweet = self.write_tweet()
+            if not self.validate_tweet(tweet):
+                tweet = None
+
+            sent = False
+            while not sent:
+                birdie = self.new_birdie()
+                sent = self.send_tweet(birdie, tweet)
+                if not sent:
+                    if self.retry and self.reconnect_attempts <= 3:
+                        self.reconnect_attempts += 1
+                        self.verbose_print(1, "Tweet failed attempt number " + self.reconnect_attempts)
+                    else:
+                        self.verbose_print(1, "Tweet failed, will not retry")
+                        sent = True
+                else:
+                    sent = True
+                    self.verbose_print(1, "Tweet sent successfully")
 
     # Sleeping ------------------------------
             
@@ -306,34 +330,23 @@ class BotBuddy(Responsive, Credentialed):
     def new_birdie(self):
         return Birdie(self.credentials)
 
-    def launch(self):
+    def run(self):
         self.verbose_print(1, "Starting up")
         self.read_args()
         
         self.sleep_until_start()
 
         while True:
-
-            birdie = self.new_birdie()
-            valid_tweet = False
-            while not valid_tweet:
-                tweet = self.create_tweet()
-                valid_tweet = self.validate_tweet(tweet)
-                if not self.retry:
-                    break
-
-            if valid_tweet:
-                attempt = True
-                while attempt:
-                    success = self.send_tweet(birdie, tweet)
-                    if not success and self.reconnect_attempts <= 3:
-                        birdie = self.new_birdie()
-                        self.reconnect_attempts += 1
-                        attempt = True
-                    else:
-                        attempt = False
-
+            self.tweet()
             self.sleep_for_interval()
 
+        self.verbose_print(1, "Shutting down")
+
+    def post(self):
+        self.verbose_print(1, "Making single post")
+        self.read_args()
+
+        self.tweet()
+        
         self.verbose_print(1, "Shutting down")
         
