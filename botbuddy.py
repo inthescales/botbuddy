@@ -185,7 +185,7 @@ class Tooter(Poster, Responsive, MastodonCredentialed):
         self.verbose_print(1, "Credentials accepted")
         return True
 
-    def post(self, message):
+    def send_post(self, message):
         self.api.toot(message)
         
 class BotBuddy(Responsive, Credentialed):
@@ -318,18 +318,18 @@ class BotBuddy(Responsive, Credentialed):
         else:
             try:
                 poster.send_post(message)
-                self.verbose_print(1, "Posted post (" + str(len(post)) + "): " + post)
+                self.verbose_print(1, "Posted message (" + str(len(message)) + "): " + message)
                 self.reconnect_attempts = 0
                 return True
             except tweepy.TweepError as err:
-                self.verbose_print(1, "TweepError with post (" + str(len(post)) + "): " + post)
+                self.verbose_print(1, "TweepError with message (" + str(len(message)) + "): " + message)
                 self.verbose_print(1, "Code: " + str(err.message[0]['code']))
                 self.verbose_print(1, "Message: " + err.message[0]['message'])
                 return False
             except tweepy.RateLimitError as err:
-                self.verbose_print(1, "RateLimitError with post (" + str(len(post)) + "): " + post)
+                self.verbose_print(1, "RateLimitError with message (" + str(len(post)) + "): " + message)
             except IOError as err:
-                self.verbose_print(1, "IOError with post (" + str(len(post)) + "): " + post)
+                self.verbose_print(1, "IOError with message (" + str(len(message)) + "): " + message)
                 return False
 
     def post_cycle(self):
