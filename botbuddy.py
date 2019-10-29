@@ -4,13 +4,16 @@ import json
 import re
 import sys
 import time
-import tweepy
 import math
+
+import tweepy
+from mastodon import Mastodon
 
 # Date and time parsing ===================================
 
 daylength = 86400
 duration_units = {"s" : 1, "m" : 60, "h" : 3600, "d" : 86400, "w" : 604800}
+supported_types = ["twitter", "mastodon"]
 
 def parse_datetime(input, interval):
     segments = input.split(":")
@@ -105,8 +108,19 @@ class Responsive:
     def error(text):
         print("ERROR: " + text)
         sys.exit()
-        
+
 class Credentialed:
+    creds_file_key = "creds_file"
+    creds_keys = []
+    
+class Poster(Responsive):
+    def validate(self, message):
+        return True
+        
+    def post(self, message):
+        error("Subclass must override 'post' method")
+    
+class TwitterCredentialed(Credentialed):
     consumer_key_key = "consumer_key"
     consumer_secret_key = "consumer_secret"
     access_token_key = "access_token"
@@ -114,17 +128,17 @@ class Credentialed:
     creds_file_key = "creds_file"
     creds_keys = [consumer_key_key, consumer_secret_key, access_token_key, access_token_secret_key]
 
-class Birdie(Responsive, Credentialed):
+class Birdie(Responsive, TwitterCredentialed):
     
     def __init__(self, creds):    
         if self.validate_creds(creds):
-            auth = tweepy.OAuthHandler(creds[Credentialed.consumer_key_key], creds[Credentialed.consumer_secret_key])
-            auth.set_access_token(creds[Credentialed.access_token_key], creds[Credentialed.access_token_secret_key])
+            auth = tweepy.OAuthHandler(creds[TwitterCredentialed.consumer_key_key], creds[TwitterCredentialed.consumer_secret_key])
+            auth.set_access_token(creds[TwitterCredentialed.access_token_key], creds[TwitterCredentialed.access_token_secret_key])
             self.api = tweepy.API(auth)
             
     def validate_creds(self, creds):
         missing = []
-        for key in Credentialed.creds_keys:
+        for key in TwitterCredentialed.creds_keys:
             if not key in creds:
                 missing.append(key)
 
@@ -134,9 +148,46 @@ class Birdie(Responsive, Credentialed):
         self.verbose_print(1, "Credentials accepted")
         return True
 
-    def tweet(self, message):
+    def validate(self, message):
+        if len(message) > 280:
+            self.verbose_print(1, "Tweet too long")
+            return False
+
+        return True
+                          
+    def post(self, message):
         self.api.update_status(status=message)
 
+class MastodonCredentialed(Credentialed):
+    access_token_key = "access_token"
+    api_base_url_key = "api_base_url"
+    creds_file_key = "creds_file"
+    creds_keys = [access_token_key, api_base_url_key]
+    
+class Tooter(Poster, Responsive, MastodonCredentialed):
+    def __init__(self, creds):    
+        if self.validate_creds(creds):
+            self.api = Mastodon(
+                access_token = creds[MastodonCredentialed.access_token_key],
+                api_base_url = creds[MastodonCredentialed.api_base_url_key],
+            )
+            
+    def validate_creds(self, creds):
+        missing = []
+
+        for key in MastodonCredentialed.creds_keys:
+            if not key in creds:
+                missing.append(key)
+
+        if missing:
+            Responsive.error("Missing creds keys " + str(missing))
+
+        self.verbose_print(1, "Credentials accepted")
+        return True
+
+    def post(self, message):
+        self.api.toot(message)
+        
 class BotBuddy(Responsive, Credentialed):
 
     # Defaults and values =====================
@@ -237,9 +288,9 @@ class BotBuddy(Responsive, Credentialed):
 
         Responsive.error("Valid creds file not found")
 
-    # Tweets --------------------------------
+    # Posting --------------------------------
 
-    def write_tweet(self):
+    def write_post(self):
 
         content = None
         if self.write_function:
@@ -247,68 +298,69 @@ class BotBuddy(Responsive, Credentialed):
         else:
             Responsive.error("No write function specified")
 
-        self.verbose_print(1, "Tweet created")
+        self.verbose_print(1, "Post created")
         return content
 
-    def validate_tweet(self, tweet):
-
-        if len(tweet) > 140:
-            self.verbose_print(1, "Tweet too long")
-            return False
+    def validate_post(self, poster, message):
 
         if self.validate_function and not self.validate_function(tweet):
-            self.verbose_print(1, "Tweet failed validation")
+            self.verbose_print(1, "Post failed external validation")
             return False
 
-        return True
+        return poster.validate(message)
 
-    # Post a tweet using the specified birdie. Returns true if successful, otherwise false
-    def send_tweet(self, birdie, tweet):
+    # Make a post using the specified poster. Returns true if successful, otherwise false
+    def send_post(self, poster, message):
 
         if self.test_mode:
-            print(tweet)
+            print(message)
             return True
         else:
             try:
-                birdie.tweet(tweet)
-                self.verbose_print(1, "Posted tweet (" + str(len(tweet)) + "): " + tweet)
+                poster.post(message)
+                self.verbose_print(1, "Posted post (" + str(len(post)) + "): " + post)
                 self.reconnect_attempts = 0
                 return True
             except tweepy.TweepError as err:
-                self.verbose_print(1, "TweepError with tweet (" + str(len(tweet)) + "): " + tweet)
+                self.verbose_print(1, "TweepError with post (" + str(len(post)) + "): " + post)
                 self.verbose_print(1, "Code: " + str(err.message[0]['code']))
                 self.verbose_print(1, "Message: " + err.message[0]['message'])
                 return False
             except tweepy.RateLimitError as err:
-                self.verbose_print(1, "RateLimitError with tweet (" + str(len(tweet)) + "): " + tweet)
+                self.verbose_print(1, "RateLimitError with post (" + str(len(post)) + "): " + post)
             except IOError as err:
-                self.verbose_print(1, "IOError with tweet (" + str(len(tweet)) + "): " + tweet)
+                self.verbose_print(1, "IOError with post (" + str(len(post)) + "): " + post)
                 return False
 
-    def tweet(self):
-        self.verbose_print(1, "Starting to tweet")
+    def full_post(self):
+        self.verbose_print(1, "Starting to post")
 
-        tweet = None
-        while not tweet:
-            tweet = self.write_tweet()
-            if not self.validate_tweet(tweet):
-                tweet = None
+        posters = self.get_posters(self.credentials)
 
+        post = None
+        while not post:
+            post = self.write_post()
+
+            # Require all posters to be able to make this post
+            for poster in posters:
+                if not self.validate_post(poster, post):
+                    post = None
+                
+        for poster in posters:
             sent = False
             while not sent:
-                birdie = self.new_birdie()
-                sent = self.send_tweet(birdie, tweet)
+                sent = self.send_post(poster, post)
                 if not sent:
                     if self.retry and self.reconnect_attempts <= 3:
                         self.reconnect_attempts += 1
-                        self.verbose_print(1, "Tweet failed attempt number " + self.reconnect_attempts)
+                        self.verbose_print(1, "post failed attempt number " + self.reconnect_attempts)
                     else:
-                        self.verbose_print(1, "Tweet failed, will not retry")
+                        self.verbose_print(1, "post failed, will not retry")
                         sent = True
                 else:
                     sent = True
-                    self.verbose_print(1, "Tweet sent successfully")
-
+                    self.verbose_print(1, "post sent successfully")
+                            
     # Sleeping ------------------------------
             
     def sleep_until_start(self):
@@ -327,9 +379,17 @@ class BotBuddy(Responsive, Credentialed):
 
     # Launcher ----------------------------------    
 
-    def new_birdie(self):
-        return Birdie(self.credentials)
+    def get_posters(self, credentials):
+        posters = []
+        for account_creds in credentials:
+            account_type = account_creds["type"]
+            if account_type == "twitter":
+                posters.append(Birdie(account_creds))
+            elif account_type == "mastodon":
+                posters.append(Tooter(account_creds))
 
+        return posters
+            
     def run(self):
         self.verbose_print(1, "Starting up")
         self.read_args()
@@ -337,7 +397,7 @@ class BotBuddy(Responsive, Credentialed):
         self.sleep_until_start()
 
         while True:
-            self.tweet()
+            self.post()
             self.sleep_for_interval()
 
         self.verbose_print(1, "Shutting down")
@@ -346,7 +406,7 @@ class BotBuddy(Responsive, Credentialed):
         self.verbose_print(1, "Making single post")
         self.read_args()
 
-        self.tweet()
+        self.full_post()
         
         self.verbose_print(1, "Shutting down")
         
