@@ -117,7 +117,7 @@ class Poster(Responsive):
     def validate(self, message):
         return True
         
-    def post(self, message):
+    def send_post(self, message):
         error("Subclass must override 'post' method")
     
 class TwitterCredentialed(Credentialed):
@@ -155,7 +155,7 @@ class Birdie(Responsive, TwitterCredentialed):
 
         return True
                           
-    def post(self, message):
+    def send_post(self, message):
         self.api.update_status(status=message)
 
 class MastodonCredentialed(Credentialed):
@@ -317,7 +317,7 @@ class BotBuddy(Responsive, Credentialed):
             return True
         else:
             try:
-                poster.post(message)
+                poster.send_post(message)
                 self.verbose_print(1, "Posted post (" + str(len(post)) + "): " + post)
                 self.reconnect_attempts = 0
                 return True
@@ -332,7 +332,7 @@ class BotBuddy(Responsive, Credentialed):
                 self.verbose_print(1, "IOError with post (" + str(len(post)) + "): " + post)
                 return False
 
-    def full_post(self):
+    def post_cycle(self):
         self.verbose_print(1, "Starting to post")
 
         posters = self.get_posters(self.credentials)
@@ -406,7 +406,7 @@ class BotBuddy(Responsive, Credentialed):
         self.verbose_print(1, "Making single post")
         self.read_args()
 
-        self.full_post()
+        self.post_cycle()
         
         self.verbose_print(1, "Shutting down")
         
