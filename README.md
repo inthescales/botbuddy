@@ -1,14 +1,16 @@
 # Bot Buddy
 
-BotBuddy is a python class that can be imported into other files to make it easier to make Twitter bots.
+BotBuddy is a python module is designed to support Twitter and Mastodon bots.
 It can handle credentials, sending requests, and scheduling with just a few lines of code or command line arguments.
+
+WARNING: SCHEDULING DOES NOT FUNCTION, DO NOT USE START OR INTERVAL 
 
 ## How to use Bot Buddy
 
 ### Setup
 
-BotBuddy will require the installation of two libraries to function: argparse and tweepy.
-These can be installed using the Python package manager, pip, with the commands `pip install argparse` and `pip install tweepy`.
+BotBuddy will require the installation of three libraries to function: argparse, tweepy, and Mastodon.py.
+These can be installed using the Python package manager, pip, with the commands `pip install argparse` , `pip install tweepy`, `pip install Mastodon.py`.
 
 You can import BotBuddy into your file with a standard import line:
 
@@ -56,36 +58,45 @@ These arguments can also be specified in setup.
 
 ### Credentials
 
-Valid account credentials are necessary to make tweets. Credentials consist of the following values: consumer key, consumer secret, access token, and access token secret.
+Valid account credentials are necessary to make posts. Credentials can contain any number of twitter and mastodon accounts. Each account consists of a "type" value indicating the service used, either "twitter" or "mastodon", plus the other values needed by that service.
 
-BotBuddy accepts credentials in the form of a json array containing these values indexed to supplied key strings.
-Those key strings can be in code accessed simply as: `BotBuddy.consumer_key_key`, `BotBuddy.consumer_secret_key`
-`BotBuddy.access_token_key`, and `BotBuddy.access_token_secret_key`
+Twitter account credentials add the following values:
+ - consumer key
+ - consumer secret
+ - access token
+ - access token secret.
+ 
+ While mastodon accounts use these instead:
+ - access token
+ - api base url
 
-Alternately, you can store this json object in a local file and either use the command line argument to specify it, or on setup pass in a credentials
-dictionary containing only one field, indexed to BotBuddy.creds_file_key, with the filename.
+BotBuddy accepts credentials in the form of an array of account objects, containing these values indexed to supplied key strings.
+
+Alternately, you can store this json object in a local file and either use the command line argument to specify it, or on setup pass in a credentials dictionary containing only one field, indexed to BotBuddy.creds_file_key, with the filename.
 
 So, a valid credentials dictionary in code looks:
 ```
-credentials = {
-    BotBuddy.consumer_key_key : "KEYSTRING",
-    BotBuddy.consumer_secret_key : "KEYSTRING",
-    BotBuddy.access_token_key : "KEYSTRING",
-    BotBuddy.access_token_secret_key : "KEYSTRING"
-}
+credentials = [
+    {
+        "type" : "twitter",
+        "consumer_key" : "KEYSTRING",
+        "consumer_secret" : "KEYSTRING",
+        "access_token" : "KEYSTRING",
+        "access_token_secret" : "KEYSTRING"
+    }
+]
 ```
 -or-
 ```
 credentials = {
-    
     BotBuddy.creds_file_key : "FILENAME"
 }
 ```
 ## Launching
 
-On launch, the bot will tweet, starting at the specified time and will continue tweeting at the specified interval.
+On launch, the bot will post, starting at the specified time and will continue posting at the specified interval.
 Unless run in test or verbose mode, there will be no command line output and the bot can be run in the background.
 
 ## That's it!
 
-Go make some lovely bots!
+Go make some beautiful bots!
