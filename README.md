@@ -34,7 +34,7 @@ The method signature for the setup method is:
 `setup(self, write_function=None, validate_function=None, start=None, interval=None, retry=None, credentials=None)`
 
 * write_function - A function returning strings to be used as tweet content.
-* validate_function - A function that takes in a string and returns a bool indicating whether that string is a valid tweet. By default, tweets will fail validation if they have more than 140 characters.
+* validate_function - A function that takes in a string and returns a bool indicating whether that string is a valid tweet. By default, tweets will fail validation if they have more than 280 characters.
 * start - Tweeting start time. Format specified below.
 * interval - Time between tweets. Format specified below.
 * retry - Whether to retry on failed validation. Default false.
@@ -83,6 +83,11 @@ credentials = [
         "consumer_secret" : "KEYSTRING",
         "access_token" : "KEYSTRING",
         "access_token_secret" : "KEYSTRING"
+    },
+    {
+        "type" : "mastodon",
+        "access_token" : "KEYSTRING",
+        "api_base_url" : "URLSTRING"
     }
 ]
 ```
