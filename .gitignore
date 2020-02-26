@@ -1,0 +1,9 @@
+# Editor files
+*~
+
+# Pythonica
+*.pyc
+__pycache__/
+
+# Credentials
+creds.json
