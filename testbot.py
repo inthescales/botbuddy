@@ -1,12 +1,9 @@
-from botbuddy import BotBuddy
-
-credentials = {
-    BotBuddy.creds_file_key : "creds.json"
-}
+import botbuddy
 
 def write():
     return "This is a post"
-    
-buddy = BotBuddy()
-buddy.setup(write, retry=True, credentials=credentials)
-buddy.post()
+
+def validate(post):
+    return post == "This is a post"
+
+botbuddy.post(write, validate, test=True)
