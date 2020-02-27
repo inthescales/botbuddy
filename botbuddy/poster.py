@@ -1,7 +1,7 @@
 import tweepy
 import mastodon
 
-from output import verbose_print, error
+from .output import verbose_print, error
 
 # Generic class for poster. Should be subclassed for each platform.
 class Poster:

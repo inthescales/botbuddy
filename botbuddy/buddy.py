@@ -6,8 +6,8 @@ import re
 import sys
 import time
 
-from output import verbose_print, error
-from poster import get_posters
+from .output import verbose_print, error
+from .poster import get_posters
 
 # Constants and Variables ==================
 
