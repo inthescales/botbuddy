@@ -1,1 +1,1 @@
-from src.buddy import post
+from .src.buddy import post
