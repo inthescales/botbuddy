@@ -8,7 +8,7 @@ with open('LICENSE') as f:
 
 setup(
     name='botbuddy',
-    version='0.1.1',
+    version='0.2.0',
     description='Facilitates posting text to social media accounts.',
     long_description=readme,
     author='Robin Hill',
