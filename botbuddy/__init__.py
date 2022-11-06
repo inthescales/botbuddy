@@ -1,1 +1,1 @@
-from .src.buddy import post
+from botbuddy.buddy import post

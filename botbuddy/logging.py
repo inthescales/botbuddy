@@ -16,5 +16,5 @@ def error(text):
     """Logs an error message and halts execution."""
 
     timestamp = datetime.now()
-    print("[%s] ERROR: %s" % (timestamp, text)
+    print("[%s] ERROR: %s" % (timestamp, text))
     sys.exit()

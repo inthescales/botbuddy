@@ -1,31 +1,28 @@
 import tweepy
 
-import src.logging as logging
+import botbuddy.logging as logging
 
-from src.credentialing import Keys
-from src.posters.poster import Poster
+from botbuddy.credentialing import Keys
+from botbuddy.posting.poster import Poster
 
 class BirdieV2(Poster):
-    """Poster class for sending messages to Twitter, using the Twitter v1 API."""
-    
+    """Poster class for sending messages to Twitter, using the Twitter v2 API."""
+
     creds_keys = [
-        Keys.consumer_key_key,
-        Keys.consumer_secret_key,
+        Keys.api_key_key,
+        Keys.api_key_secret_key,
         Keys.access_token_key,
         Keys.access_token_secret_key
     ]
     
     def __init__(self, creds):    
         if self.validate_creds(creds):
-            auth = tweepy.OAuthHandler(
-                creds[Keys.consumer_key_key], 
-                creds[Keys.consumer_secret_key]
+            self.client = tweepy.Client(
+                consumer_key=creds[Keys.api_key_key],
+                consumer_secret=creds[Keys.api_key_secret_key],
+                access_token=creds[Keys.access_token_key],
+                access_token_secret=creds[Keys.access_token_secret_key]
             )
-            auth.set_access_token(
-                creds[Keys.access_token_key],
-                creds[Keys.access_token_secret_key]
-            )
-            self.api = tweepy.API(auth)
             
     def platform_name(self):
         return "twitter"
@@ -50,4 +47,4 @@ class BirdieV2(Poster):
         return True
                           
     def send_post(self, message):
-        self.api.update_status(status=message)
+        self.client.create_tweet(text=message)

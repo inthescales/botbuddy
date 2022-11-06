@@ -1,6 +1,6 @@
-import src.logging as logging
+import botbuddy.logging as logging
 
-from src.credentialing import Keys
+from botbuddy.credentialing import Keys
 
 class Poster:
     """Generic poster class. Should be subclassed for each platform."""

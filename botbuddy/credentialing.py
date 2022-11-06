@@ -1,6 +1,6 @@
 import json
 
-import src.logging as logging
+import botbuddy.logging as logging
 
 default_creds_file = 'creds.json'
 

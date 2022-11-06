@@ -1,9 +1,9 @@
 import mastodon
 
-import src.logging as logging
+import botbuddy.logging as logging
 
-from src.credentialing import Keys
-from src.posters.poster import Poster
+from botbuddy.credentialing import Keys
+from botbuddy.posting.poster import Poster
 
 class Tooter(Poster):
     """Poster subclass for posting to Mastodon."""

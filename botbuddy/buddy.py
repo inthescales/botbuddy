@@ -1,5 +1,7 @@
-import src.logging as logging
-from src.posting import make_posters
+import botbuddy.credentialing as credentialing
+import botbuddy.logging as logging
+
+from botbuddy.posting import make_posters
 
 # Constants and Variables ==================
 
@@ -91,7 +93,7 @@ def post(write_function, validate_function=None, creds_file="creds.json", retry=
 
     logging.log(1, "Beginning to post")
 
-    credentials = read_credentials(creds_file)
+    credentials = credentialing.read_credentials(creds_file)
     post_cycle(write_function, validate_function, credentials, retry, test)
         
     logging.log(1, "Finished posting")

@@ -1,6 +1,7 @@
-from src.posters.poster import Poster
-from src.posters.birdie import Birdie
-from src.posters.tooter import Tooter
+from botbuddy.posting.poster import Poster
+from botbuddy.posting.birdie import Birdie
+from botbuddy.posting.birdieV2 import BirdieV2
+from botbuddy.posting.tooter import Tooter
 
 def make_posters(credentials):
     """Takes in a dictionary of account credentials and returns a list of posters."""
