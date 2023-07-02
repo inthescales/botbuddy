@@ -3,6 +3,9 @@ import botbuddy.logging as logging
 
 from botbuddy.posting import make_posters
 
+# TODO: Abstract exception types so I no longer need to import this.
+import tweepy
+
 # Constants and Variables ==================
 
 max_reconnect_attempts = 3
