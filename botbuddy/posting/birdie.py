@@ -17,15 +17,12 @@ class Birdie(Poster):
     
     def __init__(self, creds):    
         if self.validate_creds(creds):
-            auth = tweepy.OAuthHandler(
-                creds[Keys.consumer_key_key], 
-                creds[Keys.consumer_secret_key]
+            self.client = tweepy.Client(
+                consumer_key=creds[Keys.consumer_key_key], 
+                consumer_secret=creds[Keys.consumer_secret_key],
+                access_token=creds[Keys.access_token_key], 
+                access_token_secret=creds[Keys.access_token_secret_key]
             )
-            auth.set_access_token(
-                creds[Keys.access_token_key],
-                creds[Keys.access_token_secret_key]
-            )
-            self.api = tweepy.API(auth)
             
     def platform_name(self):
         return "twitter"
@@ -50,4 +47,4 @@ class Birdie(Poster):
         return True
                           
     def send_post(self, message):
-        self.api.update_status(status=message)
+        self.client.create_tweet(text=message)

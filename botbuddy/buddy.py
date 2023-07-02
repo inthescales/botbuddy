@@ -44,13 +44,11 @@ def send_post(poster, message, test):
             poster.send_post(message)
             logging.log(1, "Posted message (" + str(len(message)) + "): " + message)
             return True
-        except tweepy.TweepError as err:
-            logging.log(1, "TweepError with message (" + str(len(message)) + "): " + message)
-            logging.log(1, "Code: " + str(err.message[0]['code']))
-            logging.log(1, "Message: " + err.message[0]['message'])
+        except tweepy.TweepyException as err:
+            logging.log(1, "TweepyException with message (" + str(len(message)) + "): " + message)
+            logging.log(1, "Code: " + str(err.api_codes))
+            logging.log(1, "Message: " + str(err.api_messages))
             return False
-        except tweepy.RateLimitError as err:
-            logging.log(1, "RateLimitError with message (" + str(len(post)) + "): " + message)
         except IOError as err:
             logging.log(1, "IOError with message (" + str(len(message)) + "): " + message)
             return False
@@ -83,7 +81,7 @@ def post_cycle(write_function, validate_function, credentials, retry, test):
             if not sent:
                 if retry and reconnect_attempts <= max_reconnect_attempts:
                     reconnect_attempts += 1
-                    logging.log(1, "post failed attempt number " + reconnect_attempts)
+                    logging.log(1, "post failed attempt number " + str(reconnect_attempts))
                 else:
                     logging.log(1, "post failed, will not retry")
                     sent = True
