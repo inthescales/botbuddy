@@ -3,10 +3,10 @@ import tweepy
 import botbuddy.logging as logging
 
 from botbuddy.credentialing import Keys
-from botbuddy.posting.poster import Poster
+from botbuddy.clients.client import Client
 
-class BirdieV2(Poster):
-    """Poster class for sending messages to Twitter, using the Twitter v2 API."""
+class TwitterClientV2(Client):
+    """Client class for sending messages to Twitter, using the Twitter v2 API."""
 
     creds_keys = [
         Keys.api_key_key,

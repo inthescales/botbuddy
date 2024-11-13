@@ -2,8 +2,8 @@ import botbuddy.logging as logging
 
 from botbuddy.credentialing import Keys
 
-class Poster:
-    """Generic poster class. Should be subclassed for each platform."""
+class Client:
+    """Generic client class. Should be subclassed for each platform."""
     creds_keys = []
     
     def platform_name(self):

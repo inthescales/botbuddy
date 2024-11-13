@@ -1,31 +1,31 @@
-import mastodon
+import atproto
 
 import botbuddy.logging as logging
 
 from botbuddy.credentialing import Keys
-from botbuddy.posting.poster import Poster
+from botbuddy.clients.client import Client
 
-class Tooter(Poster):
-    """Poster subclass for posting to Mastodon."""
-
+class ATProtoClient(Client):
+    """Client class for sending messages through AT Protocol (e.g. to Bluesky)."""
+    
     creds_keys = [
-        Keys.access_token_key,
-        Keys.api_base_url_key
+        Keys.handle_key,
+        Keys.password_key
     ]
     
     def __init__(self, creds):    
         if self.validate_creds(creds):
-            self.api = mastodon.Mastodon(
-                access_token = creds[Keys.access_token_key],
-                api_base_url = creds[Keys.api_base_url_key],
+            self.client = atproto.Client()
+            self.client.login(
+                creds[Keys.handle_key],
+                creds[Keys.password_key]
             )
-            
+
     def platform_name(self):
-        return "mastodon"
+        return "atproto"
             
     def validate_creds(self, creds):
         missing = []
-
         for key in self.creds_keys:
             if not key in creds:
                 missing.append(key)
@@ -37,11 +37,11 @@ class Tooter(Poster):
         return True
 
     def validate(self, message):
-        if len(message) > 500:
-            logging.log(1, "Failed Mastodon validation: post too long")
+        if len(message) > 300:
+            logging.log(1, "Failed AT Protocol validation: post too long")
             return False
 
         return True
-    
+                          
     def send_post(self, message):
-        self.api.status_post(message, visibility="unlisted")
+        self.client.send_post(text=message)
