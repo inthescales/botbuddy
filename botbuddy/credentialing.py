@@ -14,6 +14,8 @@ class Keys:
     access_token_key = "access_token"
     access_token_secret_key = "access_token_secret"
     api_base_url_key = "api_base_url"
+    handle_key = "handle"
+    password_key = "password"
 
 def read_credentials(filename):
     """Reads account credentials from a JSON file, returning them as a dictionary."""

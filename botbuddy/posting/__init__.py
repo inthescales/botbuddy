@@ -2,6 +2,7 @@ from botbuddy.posting.poster import Poster
 from botbuddy.posting.birdie import Birdie
 from botbuddy.posting.birdieV2 import BirdieV2
 from botbuddy.posting.tooter import Tooter
+from botbuddy.posting.atproto_client import ATProtoClient
 
 def make_posters(credentials):
     """Takes in a dictionary of account credentials and returns a list of posters."""
@@ -15,5 +16,7 @@ def make_posters(credentials):
             posters.append(BirdieV2(account_creds))
         elif account_type == "mastodon":
             posters.append(Tooter(account_creds))
+        elif account_type in ["atproto", "bluesky"]:
+            posters.append(ATProtoClient(account_creds))
 
     return posters

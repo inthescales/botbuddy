@@ -5,6 +5,7 @@
 # Pythonica
 *.pyc
 __pycache__/
+env
 
 # Credentials
 creds.json
