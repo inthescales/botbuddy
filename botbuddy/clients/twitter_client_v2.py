@@ -26,6 +26,9 @@ class TwitterClientV2(Client):
             
     def platform_name(self):
         return "twitter"
+
+    def can_warn(self):
+        return False
             
     def validate_creds(self, creds):
         missing = []

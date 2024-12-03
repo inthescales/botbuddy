@@ -23,6 +23,9 @@ class ATProtoClient(Client):
 
     def platform_name(self):
         return "atproto"
+
+    def can_warn(self):
+        return False
             
     def validate_creds(self, creds):
         missing = []

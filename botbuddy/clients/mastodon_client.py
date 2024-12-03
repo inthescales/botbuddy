@@ -22,6 +22,9 @@ class MastodonClient(Client):
             
     def platform_name(self):
         return "mastodon"
+
+    def can_warn(self):
+        return True
             
     def validate_creds(self, creds):
         missing = []
@@ -43,5 +46,5 @@ class MastodonClient(Client):
 
         return True
     
-    def send_post(self, message):
-        self.api.status_post(message, visibility="unlisted")
+    def send_post(self, message, content_warning=None):
+        self.api.status_post(message, spoiler_text=content_warning, visibility="unlisted")

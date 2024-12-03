@@ -17,31 +17,49 @@ def write_post(write_function):
 
     content = None
     if write_function:
-        content = write_function()
+        result = write_function()
+        if isinstance(result, str):
+            content = { "content": result, "meta": None }
+        elif isinstance(result, dict):
+            if "content" not in result:
+                logging.error("Dict returned from write function must contain \"content\" value. Got " + str(result))
+
+            content = result
+        else:
+            logging.error("Write function must return string or dict. Got " + str(result))
     else:
         logging.error("No write function specified")
         
     logging.log(1, "Post written")
     return content
 
-def validate_post(validate_function, client, post):
+def validate_post(validate_function, client, post_dict):
     """Returns whether the given post passes the given validation function and the Client's requirements."""
 
-    if validate_function and not validate_function(post):
+    if validate_function and not validate_function(post_dict["content"]):
         logging.log(1, "Post failed external validation")
         return False
 
-    return client.validate(post)
+    return client.validate(post_dict["content"])
 
-def send_post(client, message, test):
+def send_post(client, post_dict, test):
     """Publishes a post using the given Client, returning whether this was successful."""
+
+    message = post_dict["content"]
+    warning = None
+    if post_dict["meta"] and "warning" in post_dict["meta"]:
+        warning = post_dict["meta"]["warning"]
 
     if test:
         print("Posted to " + client.platform_name() + ": \t" + message)
         return True
     else:
         try:
-            client.send_post(message)
+            if warning and client.can_warn():
+                client.send_post(message, content_warning=warning)
+            else:
+                client.send_post(message)
+
             logging.log(1, "Posted message (" + str(len(message)) + "): " + message)
             return True
         except tweepy.TweepyException as err:
